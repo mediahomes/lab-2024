@@ -33,6 +33,8 @@ jobs:
       security_review_context: security-review
       security_team: security-team
 
+      PR_NUMBER: ${{ github.event.number || github.event.pull_request.number }}
+
     needs:
     - test-pr
 
@@ -79,7 +81,7 @@ jobs:
       id: check-security-label
       name: Check if we have labelled PR before
       run: |
-        labeled=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.number }} \
+        labeled=$(gh api /repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }} \
           -q 'any(.labels[]; .name == "${{ env.security_review_context }}")')
 
         echo "Check security label: ${labeled}"
@@ -111,6 +113,6 @@ jobs:
     - if: |
         (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true')
       name: Label PR 
-      run: gh pr edit ${{ github.event.number }} --add-label ${{ env.security_review_context }}
+      run: gh pr edit ${{ env.PR_NUMBER }} --add-label ${{ env.security_review_context }}
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
