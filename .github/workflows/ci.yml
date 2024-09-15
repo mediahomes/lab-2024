@@ -1,0 +1,96 @@
+name: Get check and decide on next steps
+
+on:
+  # This runs whenever a PR is opened
+  # And PR is being reviewed (someone submits a review)
+  pull_request:
+  pull_request_review:
+  
+jobs:
+  test-pr:
+    name: Test Pull Request
+  
+    if: ${{ github.event_name == 'pull_request' }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set check required or not in a PR
+      id: set
+      run: |
+        echo "required=false" >> $GITHUB_OUTPUT
+
+    outputs:
+      required: ${{ steps.set.outputs.required }}
+      
+  check-review-status:
+    runs-on: ubuntu-latest
+
+    env:
+      security_review_context: security-review
+      security_team: security-team
+
+    needs:
+    - test-pr
+
+    if: |
+      always() &&
+      needs.test-pr.result == 'success' || needs.test-pr.result == 'skipped'
+
+    name: ${{ github.event_name == 'pull_request' && 'Set' || 'Update' }} Pull Request Status Checks
+      
+    steps:
+
+    - name: Get GitHub app token
+      uses: actions/create-github-app-token@v1
+      id: app-token
+      with:
+        app-id: ${{ secrets.LAB_APP_ID }}
+        private-key: ${{ secrets.LAB_APP_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}
+
+    - if: github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'false'
+      name: Skip status check if it's not required
+      run: |      
+          gh api -X POST /repos/${{ github.repository }}/statuses/${{ github.sha }} \
+            -f "state=success" \
+            -f "description=Skipped required review." \
+            -f "context=${{ env.security_review_context }}"
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+    
+    # This check-combined queries for all statuses which are combined
+    # If any of the check statuses are in 'pending' it will return a 'pending' state
+    # But not for the exact check status that we want
+    # As currently at this point in the workflow, we are for sure having only one 'pending'
+    # Status check that is the check with security review context, it is fine
+    # If one day we start to add more checks, we need to find a better way
+    
+    - if: github.event_name == 'pull_request_review'
+      name: Check PR check status when someone submits a review
+      id: check-combined
+      run: |
+        state=$(gh api /repos/${{ github.repository }}/commits/${{ github.sha }}/status -q ".state")
+
+        echo "Check combined state is $state"
+        echo "state=$state" >> $GITHUB_OUTPUT
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        
+    # If this is a pull_request event, and warning is True, we ping the team
+    # If this is a pull_request_review, we still need to check if it is still pending and ping the team 
+    # This action will update the status check if the team has already reviewed
+    
+    - if: |
+        (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true') ||
+        (github.event_name == 'pull_request_review' && steps.check-combined.outputs.state == 'pending')
+      name: Ping required team
+      uses: Automattic/action-required-review@v4
+      with:
+        requirements: |
+          - paths: unmatched
+            teams:
+              - ${{ env.security_team }}
+        status: ${{ env.security_review_context }}
+        request-reviews: true
+        token: ${{ steps.app-token.outputs.token }}
