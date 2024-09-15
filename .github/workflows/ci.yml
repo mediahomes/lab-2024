@@ -40,6 +40,17 @@ jobs:
     name: ${{ github.event_name == 'pull_request' && 'Set' || 'Update' }} Pull Request Status Checks
       
     steps:
+
+    - if: github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'false'
+      name: Skip status check if it's not required
+      run: |       
+        gh api -X POST \
+          /repos/${{ github.repository }}/commits/${{ github.sha }} \
+            -f "state=success" \
+            -f "description=Skipped required review." \
+            -f "context=${{ env.security_review_context }}"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     # This check-combined queries for all statuses which are combined
     # If any of the check statuses are in 'pending' it will return a 'pending' state
@@ -64,7 +75,7 @@ jobs:
     # This action will update the status check if the team has already reviewed
     
     - if: |
-        (github.event_name == 'pull_request' && needs.pr-check.outputs.required == 'true') ||
+        (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true') ||
         (github.event_name == 'pull_request_review' && steps.check-combined.outputs.state == 'pending')
       name: Ping required team
       uses: Automattic/action-required-review@v4
