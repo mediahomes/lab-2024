@@ -1,0 +1,13 @@
+name: Get check and decide on next steps
+
+on:
+  pull_request:
+  pull_request_review:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - run: echo "Hey"
