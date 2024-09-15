@@ -33,6 +33,8 @@ jobs:
       security_review_context: security-review
       security_team: security-team
 
+      PR_NUMBER: ${{ github.event.number || github.event.pull_request.number }}
+
     needs:
     - test-pr
 
@@ -44,8 +46,14 @@ jobs:
       
     steps:
 
-    # Have to checkout if using gh CLI
+    # DEBUG EVENT
     
+    - env: 
+          DEBUG: ${{ toJson(github.event) }}
+      run: |
+        echo $DEBUG
+
+    # Need to check if using gh pr CLI
     - uses: actions/checkout@v4
     
     - name: Get GitHub app token
@@ -66,13 +74,20 @@ jobs:
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
-    # DEBUG EVENT
+    # Unfortunately, interpolating github.event.pull_request_review is impossible, 
+    # because labels that are added after a PR is created is not tracked in GitHub context
     
-    - id: pr-labels
-      env: 
-          DEBUG: ${{ toJson(github.event) }}
+    - if: github.event_name == 'pull_request_review'
+      id: check-security-label
+      name: Check if we have labelled PR before
       run: |
-        echo $DEBUG
+        labeled=$(gh api /repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }} \
+          -q 'any(.labels[]; .name == "${{ env.security_review_context }}")')
+
+        echo "Check security label: ${labeled}"
+        echo "labeled=$labeled" >> $GITHUB_OUTPUT
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
         
     # If this is a pull_request event, and warning is True, we ping the team
     # If this is a pull_request_review, we check if it's labeled, and still ping the team
@@ -80,7 +95,8 @@ jobs:
     
     - if: |
         (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true') ||
-        (github.event_name == 'pull_request_review' && contains(github.event.pull_request_review.pull_request.labels.*.name, ${{ env.security_review_context }}))
+        (github.event_name == 'pull_request_review' && steps.check-security-label.outputs.labeled == 'true')
+        
       name: Ping required team
       uses: Automattic/action-required-review@v4
       with:
@@ -93,10 +109,11 @@ jobs:
         token: ${{ steps.app-token.outputs.token }}
 
     # Label PR
+    # Only in a PR, and when we ping the security team
     
     - if: |
         (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true')
       name: Label PR 
-      run: gh pr edit ${{ github.event.number }} --add-label ${{ env.security_review_context }}
+      run: gh pr edit ${{ env.PR_NUMBER }} --add-label ${{ env.security_review_context }}
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
