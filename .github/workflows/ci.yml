@@ -61,28 +61,22 @@ jobs:
             -f "context=${{ env.security_review_context }}"
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
-    
-    # Check if we have a pending security_review_context for the given SHA (aka in this PR)
-    
-    - if: github.event_name == 'pull_request_review'
-      name: Check PR check status when someone submits a review
-      id: check-combined
-      run: |
-        state=$(gh api /repos/${{ github.repository }}/commits/${{ github.sha }}/statuses \
-          | jq 'any(.[]; .context == "${{ env.security_review_context }}" and .state == "pending")')
 
-        echo "Check combined state is $state"
-        echo "state=$state" >> $GITHUB_OUTPUT
-      env:
-        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+    # DEBUG PR labels
+    - if: github.event_name == 'pull_request_review'
+      id: pr-labels
+      env: 
+          PR_LABEL_LIST: ${{ toJson(github.event.pull_request_review.pull_request.labels.*.name) }}
+      run: |
+        echo $PR_LABEL_LIST
         
     # If this is a pull_request event, and warning is True, we ping the team
-    # If this is a pull_request_review, we still need to check if it is still pending and ping the team 
+    # If this is a pull_request_review, we check if it's labeled, and still ping the team
     # This action will update the status check if the team has already reviewed
     
     - if: |
         (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true') ||
-        (github.event_name == 'pull_request_review' && steps.check-combined.outputs.state == 'pending')
+        (github.event_name == 'pull_request_review' && github.pull_request_review.pull_request.)
       name: Ping required team
       uses: Automattic/action-required-review@v4
       with:
