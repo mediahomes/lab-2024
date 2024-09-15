@@ -62,3 +62,4 @@ jobs:
               - ${{ env.security_team }}
         status: ${{ env.security_review_context }}
         request-reviews: true
+        token: ${{ secrets.LAB_TOKEN }}
