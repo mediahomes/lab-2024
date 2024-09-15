@@ -12,10 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: This runs in PR
-      run: echo "This runs in a PR"
-
-    - name: Set check required or not
+    - name: Set check required or not in a PR
       id: set
       run: |
         echo "required=true" >> $GITHUB_OUTPUT
@@ -25,6 +22,11 @@ jobs:
       
   check-review-status:
     runs-on: ubuntu-latest
+
+    env:
+      # vars.security_review_context
+      security_review_context: security-review
+      security_team: security-team
 
     needs:
     - pr-check
@@ -52,8 +54,11 @@ jobs:
         (github.event_name == 'pull_request' && needs.pr-check.outputs.required == 'true') ||
         (github.event_name == 'pull_request_review' && steps.check-combined.outputs.state == 'pending')
       name: Ping required team
-      run: |
-        echo "Ping team"
-    
-
-    
+      uses: Automattic/action-required-review@v4
+      with:
+        requirements: |
+          - paths: unmatched
+            teams:
+              - ${{ env.security_team }}
+        status: ${{ env.security_review_context }}
+        request-reviews: true
