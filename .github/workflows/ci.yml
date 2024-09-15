@@ -41,6 +41,14 @@ jobs:
       
     steps:
 
+    - name: Get GitHub app token
+      uses: actions/create-github-app-token@v1
+      id: app-token
+      with:
+        app-id: ${{ secrets.LAB_APP_ID }}
+        private-key: ${{ secrets.LAB_APP_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}
+
     - if: github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'false'
       name: Skip status check if it's not required
       run: |       
@@ -49,7 +57,7 @@ jobs:
             -f "description=Skipped required review." \
             -f "context=${{ env.security_review_context }}"
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
     
     # This check-combined queries for all statuses which are combined
     # If any of the check statuses are in 'pending' it will return a 'pending' state
@@ -67,8 +75,8 @@ jobs:
         echo "Check combined state is $state"
         echo "state=$state" >> $GITHUB_OUTPUT
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        
     # If this is a pull_request event, and warning is True, we ping the team
     # If this is a pull_request_review, we still need to check if it is still pending and ping the team 
     # This action will update the status check if the team has already reviewed
@@ -85,4 +93,4 @@ jobs:
               - ${{ env.security_team }}
         status: ${{ env.security_review_context }}
         request-reviews: true
-        token: ${{ secrets.LAB_TOKEN }}
+        token: ${{ steps.app-token.outputs.token }}
