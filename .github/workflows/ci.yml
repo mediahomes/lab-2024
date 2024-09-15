@@ -49,7 +49,7 @@ jobs:
     # If this is a pull_request_review, we need to check if it is still pending and ping the team
     - if: |
         (github.event_name == 'pull_request' && needs.pr-check.outputs.required == 'true') ||
-        (github.event_name == 'pull_request_review' && steps.check-combined.outputs.state == 'pending' }}
+        (github.event_name == 'pull_request_review' && steps.check-combined.outputs.state == 'pending')
       name: Ping required team
       run: |
         echo "Ping team"
