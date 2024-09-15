@@ -84,6 +84,8 @@ jobs:
 
         echo "Check security label: ${labeled}"
         echo "labeled=$labeled" >> $GITHUB_OUTPUT
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
         
     # If this is a pull_request event, and warning is True, we ping the team
     # If this is a pull_request_review, we check if it's labeled, and still ping the team
