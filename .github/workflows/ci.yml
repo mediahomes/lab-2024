@@ -15,10 +15,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@v4
+    
     - name: Set check required or not in a PR
       id: set
       run: |
-        echo "required=false" >> $GITHUB_OUTPUT
+        required=$(cat .review)
+        echo "required=$required" >> $GITHUB_OUTPUT
 
     outputs:
       required: ${{ steps.set.outputs.required }}
