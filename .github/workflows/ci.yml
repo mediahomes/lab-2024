@@ -46,7 +46,8 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # If this is a pull_request event, and warning is True, we ping the team
-    # If this is a pull_request_review, we need to check if it is still pending and ping the team
+    # If this is a pull_request_review, we still need to check if it is still pending and ping the team 
+    # This action will update the status check if the team has already reviewed
     - if: |
         (github.event_name == 'pull_request' && needs.pr-check.outputs.required == 'true') ||
         (github.event_name == 'pull_request_review' && steps.check-combined.outputs.state == 'pending')
