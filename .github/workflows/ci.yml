@@ -18,3 +18,5 @@ jobs:
 
         echo "Check combined state is $state"
         echo "state=$state" >> $GITHUB_OUTPUT
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
