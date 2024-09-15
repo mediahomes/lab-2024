@@ -1,9 +1,10 @@
 name: Get check and decide on next steps
 
 on:
+  # This runs whenever a PR is opened
+  # And PR is being reviewed (someone submits a review)
   pull_request:
   pull_request_review:
-  workflow_dispatch:
 
 jobs:
   test-pr:
