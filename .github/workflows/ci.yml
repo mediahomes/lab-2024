@@ -6,6 +6,13 @@ on:
   pull_request:
   pull_request_review:
 
+# This lab only uses built-in workflow permissions
+# We should use GitHub app identity for the security context for security
+
+permissions:
+  checks: write
+  statuses: write
+  
 jobs:
   test-pr:
     name: Test Pull Request
