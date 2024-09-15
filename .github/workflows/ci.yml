@@ -95,7 +95,8 @@ jobs:
     
     - if: |
         (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true') ||
-        (github.event_name == 'pull_request_review' && steps.check-security-labeled.outputs.labeled == 'true')
+        (github.event_name == 'pull_request_review' && steps.check-security-label.outputs.labeled == 'true')
+        
       name: Ping required team
       uses: Automattic/action-required-review@v4
       with:
