@@ -51,12 +51,11 @@ jobs:
 
     - if: github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'false'
       name: Skip status check if it's not required
-      run: >       
-          gh api --method POST 
-          -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" 
-          -f "state=success" 
-          -f "description=Skipped required review." 
-          -f "context=${{ env.security_review_context }}"
+      run: |      
+          gh api -X POST /repos/${{ github.repository }}/statuses/${{ github.sha }} \
+            -f "state=success" \
+            -f "description=Skipped required review." \
+            -f "context=${{ env.security_review_context }}"
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
     
