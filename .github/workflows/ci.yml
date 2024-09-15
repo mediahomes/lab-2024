@@ -23,7 +23,7 @@ jobs:
     outputs:
       required: ${{ steps.set.outputs.required }}
       
-  check:
+  check-review-status:
     runs-on: ubuntu-latest
 
     needs:
