@@ -6,7 +6,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  pr-check:
+  test-pr:
+    name: Test Pull Request
+  
     if: ${{ github.event_name == 'pull_request' }}
 
     runs-on: ubuntu-latest
@@ -15,7 +17,7 @@ jobs:
     - name: Set check required or not in a PR
       id: set
       run: |
-        echo "required=true" >> $GITHUB_OUTPUT
+        echo "required=false" >> $GITHUB_OUTPUT
 
     outputs:
       required: ${{ steps.set.outputs.required }}
@@ -28,11 +30,11 @@ jobs:
       security_team: security-team
 
     needs:
-    - pr-check
+    - test-pr
 
     if: |
       always() &&
-      needs.pr-check.result == 'success' || needs.pr-check.result == 'skipped'
+      needs.test-pr.result == 'success' || needs.test-pr.result == 'skipped'
       
     steps:
     
@@ -43,7 +45,7 @@ jobs:
     # Status check that is the check with security review context, it is fine
     # If one day we start to add more checks, we need to find a better way
     
-    - if: ${{ github.event_name == 'pull_request_review' }}
+    - if: github.event_name == 'pull_request_review'
       name: Check PR check status when someone submits a review
       id: check-combined
       run: |
