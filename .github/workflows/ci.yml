@@ -43,10 +43,6 @@ jobs:
     name: ${{ github.event_name == 'pull_request' && 'Set' || 'Update' }} Pull Request Status Checks
       
     steps:
-
-    # Have to checkout if using gh CLI
-    
-    - uses: actions/checkout@v4
     
     - name: Get GitHub app token
       uses: actions/create-github-app-token@v1
@@ -73,6 +69,19 @@ jobs:
           DEBUG: ${{ toJson(github.event) }}
       run: |
         echo $DEBUG
+
+    # Unfortunately, interpolating github.event.pull_request_review is impossible, 
+    # because labels that are added after a PR is created is not tracked in GitHub context
+    
+    - if: github.event_name == 'pull_request_review'
+      id: check-security-label
+      name: Check if we have labelled PR before
+      run: |
+        labeled=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.number }} \
+          -q 'any(.labels[]; .name == "${{ env.security_review_context }}")')
+
+        echo "Check security label: ${labeled}"
+        echo "labeled=$labeled" >> $GITHUB_OUTPUT
         
     # If this is a pull_request event, and warning is True, we ping the team
     # If this is a pull_request_review, we check if it's labeled, and still ping the team
@@ -80,7 +89,7 @@ jobs:
     
     - if: |
         (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true') ||
-        (github.event_name == 'pull_request_review' && contains(github.event.pull_request_review.pull_request.labels.*.name, ${{ env.security_review_context }}))
+        (github.event_name == 'pull_request_review' && steps.check-security-labeled.outputs.labeled == 'true')
       name: Ping required team
       uses: Automattic/action-required-review@v4
       with:
@@ -93,6 +102,7 @@ jobs:
         token: ${{ steps.app-token.outputs.token }}
 
     # Label PR
+    # Only in a PR, and when we ping the security team
     
     - if: |
         (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true')
