@@ -43,6 +43,16 @@ jobs:
     name: ${{ github.event_name == 'pull_request' && 'Set' || 'Update' }} Pull Request Status Checks
       
     steps:
+
+    # DEBUG EVENT
+    
+    - env: 
+          DEBUG: ${{ toJson(github.event) }}
+      run: |
+        echo $DEBUG
+
+    # Need to check if using gh pr CLI
+    - uses: actions/checkout@v4
     
     - name: Get GitHub app token
       uses: actions/create-github-app-token@v1
@@ -61,14 +71,6 @@ jobs:
             -f "context=${{ env.security_review_context }}"
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
-
-    # DEBUG EVENT
-    
-    - id: pr-labels
-      env: 
-          DEBUG: ${{ toJson(github.event) }}
-      run: |
-        echo $DEBUG
 
     # Unfortunately, interpolating github.event.pull_request_review is impossible, 
     # because labels that are added after a PR is created is not tracked in GitHub context
