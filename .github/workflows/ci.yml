@@ -44,6 +44,10 @@ jobs:
       
     steps:
 
+    # Have to checkout if using gh CLI
+    
+    - uses: actions/checkout@v4
+    
     - name: Get GitHub app token
       uses: actions/create-github-app-token@v1
       id: app-token
@@ -62,11 +66,11 @@ jobs:
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
-    # DEBUG PR labels
-    - if: github.event_name == 'pull_request_review'
-      id: pr-labels
+    # DEBUG EVENT
+    
+    - id: pr-labels
       env: 
-          DEBUG: ${{ toJson(github.event.pull_request_review) }}
+          DEBUG: ${{ toJson(github.event) }}
       run: |
         echo $DEBUG
         
@@ -87,3 +91,10 @@ jobs:
         status: ${{ env.security_review_context }}
         request-reviews: true
         token: ${{ steps.app-token.outputs.token }}
+
+    # Label PR
+    
+    - if: |
+        (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true')
+      name: Label PR 
+      run: gh pr edit --add-label ${{ env.security_review_context }}
