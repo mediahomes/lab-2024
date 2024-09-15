@@ -27,8 +27,7 @@ jobs:
 
     # If this is a pull_request event, and warning is True, we ping the team
     # If this is a pull_request_review, we need to check if it is already succeed, if not, still ping the team
-    - if: |
-        ${{ steps.check-combined.outputs.state != "success" }}
+    - if: ${{ steps.check-combined.outputs.state != "success" }}
       run: |
         echo "Runs if PR is not yet in a success state"
     
