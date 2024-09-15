@@ -98,3 +98,5 @@ jobs:
         (github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'true')
       name: Label PR 
       run: gh pr edit --add-label ${{ env.security_review_context }}
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
