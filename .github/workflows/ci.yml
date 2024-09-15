@@ -55,6 +55,11 @@ jobs:
 
     # Need to check if using gh pr CLI
     - uses: actions/checkout@v4
+
+    # Always use GitHub app credentials when working with GitHub status checks
+    # We want the checks to always originate from a secure GitHub app as
+    # using built-in workflows permissions can allow anyone with Write permissions
+    # to update any status checks to bypass the required checks
     
     - name: Get GitHub app token
       uses: actions/create-github-app-token@v1
