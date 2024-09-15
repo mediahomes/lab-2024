@@ -66,9 +66,9 @@ jobs:
     - if: github.event_name == 'pull_request_review'
       id: pr-labels
       env: 
-          PR_LABEL_LIST: ${{ toJson(github.event.pull_request_review.pull_request.labels.*.name) }}
+          DEBUG: ${{ toJson(github.event.pull_request_review) }}
       run: |
-        echo $PR_LABEL_LIST
+        echo $DEBUG
         
     # If this is a pull_request event, and warning is True, we ping the team
     # If this is a pull_request_review, we check if it's labeled, and still ping the team
