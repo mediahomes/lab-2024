@@ -44,7 +44,7 @@ jobs:
     - if: github.event_name == 'pull_request' && needs.test-pr.outputs.required == 'false'
       name: Skip status check if it's not required
       run: |       
-        gh api -X POST /repos/${{ github.repository }}/commits/${{ github.sha }} \
+        gh api --method POST /repos/${{ github.repository }}/commits/${{ github.sha }} \
             -f "state=success" \
             -f "description=Skipped required review." \
             -f "context=${{ env.security_review_context }}"
