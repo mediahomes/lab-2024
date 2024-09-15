@@ -24,7 +24,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # vars.security_review_context
       security_review_context: security-review
       security_team: security-team
 
@@ -36,6 +35,14 @@ jobs:
       needs.pr-check.result == 'success' || needs.pr-check.result == 'skipped'
       
     steps:
+    
+    # This check-combined queries for all statuses which are combined
+    # If any of the check statuses are in 'pending' it will return a 'pending' state
+    # But not for the exact check status that we want
+    # As currently at this point in the workflow, we are for sure having only one 'pending'
+    # Status check that is the check with security review context, it is fine
+    # If one day we start to add more checks, we need to find a better way
+    
     - if: ${{ github.event_name == 'pull_request_review' }}
       name: Check PR check status when someone submits a review
       id: check-combined
@@ -50,6 +57,7 @@ jobs:
     # If this is a pull_request event, and warning is True, we ping the team
     # If this is a pull_request_review, we still need to check if it is still pending and ping the team 
     # This action will update the status check if the team has already reviewed
+    
     - if: |
         (github.event_name == 'pull_request' && needs.pr-check.outputs.required == 'true') ||
         (github.event_name == 'pull_request_review' && steps.check-combined.outputs.state == 'pending')
